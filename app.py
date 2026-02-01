@@ -59,3 +59,4 @@ def run_real_estate_app():
 
 if __name__ == "__main__":
     run_real_estate_app()
+
