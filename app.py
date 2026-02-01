@@ -55,6 +55,7 @@ def run_real_estate_app():
                 
         except Exception as e:
             st.error(f"エラーが発生しました。管理者にお問い合わせください。")
+            
 
 if __name__ == "__main__":
     run_real_estate_app()
