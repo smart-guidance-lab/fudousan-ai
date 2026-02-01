@@ -1,65 +1,60 @@
-import os
 import streamlit as st
 from openai import OpenAI
-from dotenv import load_dotenv
-
-# .envファイルからAPIキーを読み込む
-load_dotenv()
 
 def run_real_estate_app():
     """
-    不動産広告生成アプリのメインロジック。
+    パスワード制限付きの不動産広告生成アプリ。
     
     Args:
-        None (StreamlitのUI入力を直接利用)
-        
+        None: StreamlitのUIから直接取得
     Returns:
-        None (画面上に結果を表示)
-        
+        None: 画面に結果を表示
     計算上のエッジケース:
-        APIキーが設定されていない場合、エラーメッセージを表示して停止する。
+        パスワードが未入力または誤っている場合に、API呼び出しを物理的に遮断する。
     """
-    # APIキーの確認
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        st.error("APIキーが設定されていません。.envファイルを確認してください。")
-        return
+    st.set_page_config(page_title="不動産広告AI プレミアム", layout="centered")
+    
+    # サイドバーにパスワード入力を設置
+    with st.sidebar:
+        st.title("🔑 認証")
+        user_password = st.text_input("パスワードを入力", type="password")
+        st.info("※現在はテスト期間中です。パスワード『trial2026』でフル機能が使えます。")
+        st.divider()
+        st.write("### 💎 有料版の登録")
+        st.link_button("無制限プランに加入する", "https://buy.stripe.com/あなたのリンク")
 
-    client = OpenAI(api_key=api_key)
-
-    # UIの設定
     st.title("🏠 不動産広告自動生成ツール")
-    st.caption("物件情報を入力するだけで、SNS向けのキャッチコピーを生成します。")
+    
+    # ユーザー入力
+    property_details = st.text_area("物件情報を入力してください", height=150)
 
-    # 入力フォーム
-    property_info = st.text_area("物件概要を貼り付けてください", placeholder="例：港区 3LDK 25万円 駅から徒歩3分...", height=200)
-
-    if st.button("広告文を生成する"):
-        if not property_info:
+    if st.button("広告文を生成"):
+        # パスワードチェックの論理的帰結
+        if user_password != "trial2026":
+            st.error("パスワードが正しくありません。")
+            return
+            
+        if not property_details:
             st.warning("情報を入力してください。")
             return
 
         try:
-            # 中間ログ：API呼び出し開始
-            st.info("AIが文章を考えています...")
-
-            response = client.chat.completions.create(
-                model="gpt-4o",  # 2026年時点で最も安定した「枯れた最高級」モデル
-                messages=[
-                    {"role": "system", "content": "あなたはプロの不動産ライターです。入力された情報を元に、Instagramで目を引く絵文字付きの広告文を作成してください。"},
-                    {"role": "user", "content": property_info}
-                ]
-            )
-
-            # 結果の出力
-            result = response.choices[0].message.content
-            st.success("生成完了！")
-            st.subheader("生成された広告文")
-            st.write(result)
-            st.copy_config = result # コピーしやすいように表示
-
-        except Exception as error:
-            st.error(f"エラーが発生しました: {str(error)}")
+            # SecretsからAPIキーを取得
+            client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+            
+            with st.spinner("AIが最高の一句を考案中..."):
+                response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[
+                        {"role": "system", "content": "あなたは不動産専門のコピーライターです。絵文字を効果的に使い、成約率の高いSNS用広告文を作成してください。"},
+                        {"role": "user", "content": property_details}
+                    ]
+                )
+                st.success("生成完了！")
+                st.write(response.choices[0].message.content)
+                
+        except Exception as e:
+            st.error(f"エラーが発生しました。管理者にお問い合わせください。")
 
 if __name__ == "__main__":
     run_real_estate_app()
